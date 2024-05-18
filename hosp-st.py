@@ -1,15 +1,12 @@
 import base64
-import io
 import streamlit as st
 import pandas as pd
 from openpyxl import load_workbook
-from dotenv import load_dotenv
 import pandas as pd
 import warnings
 warnings.filterwarnings('ignore')
 import numpy as np
 import cleaner
-load_dotenv()
 
 @st.cache_resource()
 def load_data(file):
