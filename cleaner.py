@@ -176,11 +176,12 @@ def validate_rate(df):
         try:
             rate_value = row['RATE']
             cost_value = row['COST']
-            
+            rate = int(rate_value)
             # Check if rate equals cost and hours is not equal to 1
             if rate_value == cost_value or type(rate_value)==str:
                 # If rate equals cost but hours is not 1, set rate-validate to False for this row
                 indices.append(index)
+                
                 df.at[index, 'CALCULATION-VALIDATE'] = False
             else:
                 # Otherwise, set rate-validate to True for this row
