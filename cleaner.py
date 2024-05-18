@@ -1,12 +1,21 @@
-# %%
+from openpyxl import load_workbook
 import pandas as pd
-import warnings
-warnings.filterwarnings('ignore')
 import numpy as np
-from datetime import datetime
+from datetime import datetime, timedelta
+from fuzzywuzzy import process
 
-# %%
+def convert(file):
+    wb = load_workbook(file)
+    sheet_names = wb.sheetnames
+    dfdict = excel_to_dataframes(uploaded_file=file, sheetnames=sheet_names)
+    cleaned_dfdict = validate_all(dfdict=dfdict)
+    merged = newindex(dfdict=cleaned_dfdict)
+    validate_columns = merged.columns[merged.columns.str.endswith('-VALIDATE')]
 
+    # Flip boolean values in the selected columns
+    merged[validate_columns] = ~merged[validate_columns]  
+    json_data = merged.to_json(orient='records')  
+    return json_data
 
 
 def excel_to_dataframes(uploaded_file, sheetnames):
@@ -14,6 +23,8 @@ def excel_to_dataframes(uploaded_file, sheetnames):
     dfs_dict = {}
     
     for sheet_name in sheetnames:
+        if sheet_name=="MAIN MENU":
+            continue
         df = pd.read_excel(uploaded_file, sheet_name=sheet_name)
         # Select only the first 8 columns
         while len(df.columns) < 9:
@@ -33,11 +44,23 @@ def excel_to_dataframes(uploaded_file, sheetnames):
         for col in df.columns:
             df[f'{col}-VALIDATE'] = True
         df['SHIFT START'] = np.nan
+        df["HOSPITAL"] = sheet_name
+        df["STATE"] = get_state(sheet_name)
         df["CALCULATION-VALIDATE"] = True
         df['SHIFT END'] = np.nan
         dfs_dict[sheet_name] = df
     
     return dfs_dict
+
+
+def get_state(hosp_name):
+    df = pd.read_csv("data/hospstate.csv")
+    req = df[["hospital-name","state"]]
+    bestmatch = process.extractOne(hosp_name, req["hospital-name"])
+    state_map = dict(zip(req['hospital-name'], req['state']))
+    return state_map[bestmatch[0]]
+
+
 
 # %%
 def validate_date(df):
@@ -67,25 +90,41 @@ def validate_shift(df):
         
         # Clean the shift value and split it into start and end times
         try:
-            shift_value = "".join(shift_value.strip().split(" "))
-            shift_start = shift_value[:4]
-            shift_end = shift_value[5:]
+            shift_value = str(shift_value).replace(" ","")
             
             # Check if the shift value is in the correct format
-            if not isinstance(shift_value, str) or not len(shift_value) == 9 or not shift_value[4] == '-':
+            if len(shift_value) != 9:
                 # If the shift value is not in the correct format, set shift-validate to False for this row
+                
                 df.at[index, 'SHIFT-VALIDATE'] = False
                 indices.append(index)
 
             else:
+                shift_start = shift_value[:4]
+                shift_end = shift_value[5:]
                 # If the shift value is in the correct format, set shift-validate to True for this row
                 df.at[index, 'SHIFT-VALIDATE'] = True
                 
                 df.at[index, 'SHIFT START'] = datetime.strptime(shift_start, "%H%M").time()
                 df.at[index, 'SHIFT END'] = datetime.strptime(shift_end, "%H%M").time()
                 # Set the 'SHIFT START' and 'SHIFT END' values
+                if df.at[index, 'SHIFT START']>=df.at[index, 'SHIFT END']:
+                    date_obj = datetime.strptime(df.at[index, 'DATE'],"%Y-%m-%d")
+                    # Step 2: Add one day to the datetime object
+                    next_date_obj = date_obj + timedelta(days=1)
 
-        except:
+                    # If you need the next date as a string in the same format:
+                    next_date_str = next_date_obj.strftime("%d:%m:%Y")
+
+                    df.at[index, 'SHIFT END'] = next_date_str + ":" + str(df.at[index, 'SHIFT END'])
+                else:
+                    df.at[index, 'SHIFT END'] = ":".join(str(df.at[index, 'DATE']).split("-")[::-1]) + ":" + str(df.at[index, 'SHIFT END'])
+                df.at[index, 'SHIFT START'] = ":".join(str(df.at[index, 'DATE']).split("-")[::-1]) + ":" + str(df.at[index, 'SHIFT START'])
+                
+
+
+        except Exception as e:
+            print(e)
             df.at[index, 'SHIFT-VALIDATE'] = False
             indices.append(index)
 

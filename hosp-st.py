@@ -3,11 +3,13 @@ import io
 import streamlit as st
 import pandas as pd
 from openpyxl import load_workbook
+from dotenv import load_dotenv
 import pandas as pd
 import warnings
 warnings.filterwarnings('ignore')
 import numpy as np
 import cleaner
+load_dotenv()
 
 @st.cache_resource()
 def load_data(file):
@@ -15,9 +17,9 @@ def load_data(file):
     sheet_names = wb.sheetnames
     dfdict = cleaner.excel_to_dataframes(uploaded_file=file, sheetnames=sheet_names)
     cleaned_dfdict = cleaner.validate_all(dfdict=dfdict)
-    merged = cleaner.newindex(dfdict=dfdict)
+    merged = cleaner.newindex(dfdict=cleaned_dfdict)
     validate_columns = merged.columns[merged.columns.str.endswith('-VALIDATE')]
-
+    print(validate_columns)
     # Flip boolean values in the selected columns
     merged[validate_columns] = ~merged[validate_columns]    
     return merged
@@ -40,8 +42,7 @@ def main():
             href = f'<a href="data:application/json;base64,{b64}" download="{filename}">Download JSON file</a>'
             return href
         
-
-        st.write(json_data[0])
+        st.write(merged.iloc[120])
         st.markdown(download_json(json_data, 'data.json'), unsafe_allow_html=True)
 
         
