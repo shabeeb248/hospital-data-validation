@@ -44,8 +44,7 @@ def excel_to_dataframes(uploaded_file, sheetnames):
         for col in df.columns:
             df[f'{col}-VALIDATE'] = True
         df['SHIFT START'] = np.nan
-        df["HOSPITAL"] = sheet_name
-        df["STATE"] = get_state(sheet_name)
+        df["STATE"],df["HOSPITAL"] = get_state(sheet_name)
         df["CALCULATION-VALIDATE"] = True
         df['SHIFT END'] = np.nan
         dfs_dict[sheet_name] = df
@@ -58,7 +57,7 @@ def get_state(hosp_name):
     req = df[["hospital-name","state"]]
     bestmatch = process.extractOne(hosp_name, req["hospital-name"])
     state_map = dict(zip(req['hospital-name'], req['state']))
-    return state_map[bestmatch[0]]
+    return state_map[bestmatch[0]],bestmatch[0]
 
 
 
