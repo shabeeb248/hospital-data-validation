@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
 from fuzzywuzzy import process
+import re
 
 def convert(file):
     wb = load_workbook(file)
@@ -21,11 +22,15 @@ def convert(file):
 def excel_to_dataframes(uploaded_file, sheetnames):
     
     dfs_dict = {}
-    
+    count = 0
     for sheet_name in sheetnames:
         if sheet_name=="MAIN MENU":
             continue
         df = pd.read_excel(uploaded_file, sheet_name=sheet_name)
+
+        if count==0:
+            print(df)
+            count+=1
         # Select only the first 8 columns
         while len(df.columns) < 9:
             df[len(df.columns)] = np.nan
@@ -44,7 +49,7 @@ def excel_to_dataframes(uploaded_file, sheetnames):
         for col in df.columns:
             df[f'{col}-VALIDATE'] = True
         df['SHIFT START'] = np.nan
-        df["STATE"],df["HOSPITAL"] = get_state(sheet_name)
+        df["STATE"],df["HOSPITAL"] = get_state(df, sheet_name)
         df["CALCULATION-VALIDATE"] = True
         df['SHIFT END'] = np.nan
         dfs_dict[sheet_name] = df
@@ -52,12 +57,31 @@ def excel_to_dataframes(uploaded_file, sheetnames):
     return dfs_dict
 
 
-def get_state(hosp_name):
+def get_state(data, sheetname):
+    address_pattern = re.compile(r'address.*')
+    address = ""
+    for column in data.columns:
+        for index, value in enumerate(data[column]):
+            if isinstance(value, str):
+                match = address_pattern.search(value)
+                if match:
+                    address = match.group()
+                    address = address.split(":")[-1].strip()
+                    print(f'Extracted address: {address}')
+                    print(f'Column: {column}, Row: {index}')
+
     df = pd.read_csv("data/hospstate.csv")
-    req = df[["hospital-name","state"]]
-    bestmatch = process.extractOne(hosp_name, req["hospital-name"])
-    state_map = dict(zip(req['hospital-name'], req['state']))
-    return state_map[bestmatch[0]],bestmatch[0]
+    req = df[["hospital-name","state","geo-address"]]
+    if address!="":
+        bestmatchadd = process.extractOne(address, req["geo-address"])
+        name_map = dict(zip(req['geo-address'], req['hospital-name']))
+        state_map = dict(zip(req['hospital-name'], req['state']))
+        return state_map[name_map[bestmatchadd[0]]],name_map[bestmatchadd[0]]
+    else:
+        bestmatchadd = process.extractOne(sheetname, req["hospital-name"])
+        state_map = dict(zip(req['hospital-name'], req['state']))
+        return state_map[bestmatchadd[0]],bestmatchadd[0]
+    
 
 
 
@@ -108,7 +132,7 @@ def validate_shift(df):
                 df.at[index, 'SHIFT END'] = datetime.strptime(shift_end, "%H%M").time()
                 # Set the 'SHIFT START' and 'SHIFT END' values
                 if df.at[index, 'SHIFT START']>=df.at[index, 'SHIFT END']:
-                    date_obj = datetime.strptime(df.at[index, 'DATE'],"%Y-%m-%d")
+                    date_obj = datetime.strptime(str(df.at[index, 'DATE']),"%Y-%m-%d")
                     # Step 2: Add one day to the datetime object
                     next_date_obj = date_obj + timedelta(days=1)
 
