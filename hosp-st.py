@@ -7,6 +7,7 @@ import warnings
 warnings.filterwarnings('ignore')
 import numpy as np
 import cleaner
+import datetime
 
 @st.cache_resource()
 def load_data(file):
@@ -24,6 +25,7 @@ def load_data(file):
 
 def main():
     st.title("Excel File Upload App")
+    st.title("last pushed May 21 1:48 AM")
     st.write("This app allows you to upload an Excel file and view its contents.")
 
     # File upload
@@ -39,7 +41,7 @@ def main():
             href = f'<a href="data:application/json;base64,{b64}" download="{filename}">Download JSON file</a>'
             return href
         
-        st.write(merged.iloc[70])
+        st.write(merged.iloc[30])
         st.markdown(download_json(json_data, 'data.json'), unsafe_allow_html=True)
 
         
