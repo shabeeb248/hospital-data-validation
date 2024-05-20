@@ -84,7 +84,6 @@ def get_state(data, sheetname):
     
 
 
-
 # %%
 def validate_date(df):
     # Initialize an empty list to store boolean values indicating whether each row is valid
@@ -137,19 +136,18 @@ def validate_shift(df):
                     next_date_obj = date_obj + timedelta(days=1)
 
                     # If you need the next date as a string in the same format:
-                    next_date_str = next_date_obj.strftime("%d:%m:%Y")
+                    next_date_str = next_date_obj.strftime("%Y-%m-%d")
 
                     df.at[index, 'SHIFT END'] = next_date_str + ":" + str(df.at[index, 'SHIFT END'])
                 else:
-                    df.at[index, 'SHIFT END'] = ":".join(str(df.at[index, 'DATE']).split("-")[::-1]) + ":" + str(df.at[index, 'SHIFT END'])
-                df.at[index, 'SHIFT START'] = ":".join(str(df.at[index, 'DATE']).split("-")[::-1]) + ":" + str(df.at[index, 'SHIFT START'])
+                    df.at[index, 'SHIFT END'] = str(df.at[index, 'DATE']) + "T" + str(df.at[index, 'SHIFT END']) + ".000Z"
+                df.at[index, 'SHIFT START'] = str(df.at[index, 'DATE']) + "T" + str(df.at[index, 'SHIFT START']) + ".000Z"
                 
-
-
+            
         except Exception as e:
-            print(e)
             df.at[index, 'SHIFT-VALIDATE'] = False
             indices.append(index)
+        
 
     return df,indices
 
@@ -322,6 +320,7 @@ def newindex(dfdict):
         sheetname_abrs.append(sheetname_abr)
         df['SERIAL NO'] = sheetname_abr + pd.to_datetime(df['DATE']).dt.strftime('%y%m%d') + df['SHIFT'].astype(str).str.replace("-", "").replace(" ","")   
         # Append the modified dataframe to the list
+        df["DATE"] = pd.to_datetime(df['DATE']).dt.strftime("%Y-%m-%d") + "T00:00:00.000Z"
         dfs_list.append(df)
 
     merged_df = pd.concat(dfs_list, ignore_index=True)
