@@ -138,7 +138,7 @@ def validate_shift(df):
                     # If you need the next date as a string in the same format:
                     next_date_str = next_date_obj.strftime("%Y-%m-%d")
 
-                    df.at[index, 'SHIFT END'] = next_date_str + ":" + str(df.at[index, 'SHIFT END'])+ ".000Z"
+                    df.at[index, 'SHIFT END'] = next_date_str + "T" + str(df.at[index, 'SHIFT END'])+ ".000Z"
                 else:
                     df.at[index, 'SHIFT END'] = str(df.at[index, 'DATE']) + "T" + str(df.at[index, 'SHIFT END']) + ".000Z"
                 df.at[index, 'SHIFT START'] = str(df.at[index, 'DATE']) + "T" + str(df.at[index, 'SHIFT START']) + ".000Z"
