@@ -221,6 +221,8 @@ def validate_cost(df):
             rate_value = row['RATE']
             hours_value = row['HOURS']
             cost_value = row['COST']
+
+            cost = int(cost_value)
             
             expected_cost = rate_value * hours_value
             if expected_cost != cost_value:
