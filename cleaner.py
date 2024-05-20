@@ -128,7 +128,7 @@ def validate_shift(df):
                 df.at[index, 'SHIFT-VALIDATE'] = True
                 
                 df.at[index, 'SHIFT START'] = datetime.strptime(shift_start, "%H%M").time()
-                df.at[index, 'SHIFT END'] = datetime.strqptime(shift_end, "%H%M").time()
+                df.at[index, 'SHIFT END'] = datetime.strptime(shift_end, "%H%M").time()
                 # Set the 'SHIFT START' and 'SHIFT END' values
                 if df.at[index, 'SHIFT START']>=df.at[index, 'SHIFT END']:
                     date_obj = datetime.strptime(str(df.at[index, 'DATE']),"%Y-%m-%d")
