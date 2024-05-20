@@ -25,7 +25,7 @@ def load_data(file):
 
 def main():
     st.title("Excel File Upload App")
-    st.write("last pushed May 21 1:48 AM")
+    st.write("last pushed May 21 1:49 AM")
     st.write("This app allows you to upload an Excel file and view its contents.")
 
     # File upload
